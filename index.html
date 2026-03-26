@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Hostel Meal Manager</title>
+    <!-- Google Fonts: Inter for premium typography -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap" rel="stylesheet">
+    <!-- Font Awesome for Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Chart.js Plugin -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="stylesheet" href="css/style.css">
+    
+    <!-- PWA Settings -->
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#050505">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+</head>
+<body>
+    <div id="app-container">
+        <!-- Top App Bar -->
+        <header class="glass-header">
+            <h1>Meal<span style="color:var(--text-primary)">Manager</span></h1>
+            <button id="btn-export" title="Export/Import Data" class="icon-button"><i class="fas fa-file-export"></i></button>
+        </header>
+
+        <main id="main-content">
+            <!-- 1. Dashboard View -->
+            <section id="view-dashboard" class="view active">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+                    <h2 class="section-title" style="margin-bottom: 0;">Balances</h2>
+                    <div class="glass-badge" style="background: rgba(57, 255, 20, 0.1); color: var(--color-positive); padding: 5px 12px; border-radius: 12px; font-size: 0.85rem; font-weight: 600;">
+                        <i class="fas fa-utensils"></i> Rs.<span id="cost-per-meal-display">0.00</span> / meal
+                    </div>
+                </div>
+                <div id="balances-grid" class="balances-grid">
+                    <!-- Cards will be populated dynamically -->
+                </div>
+                
+                <div class="glass-card mt-20" style="margin-top: 24px; text-align: center;">
+                    <h3 style="margin-bottom: 12px; font-weight: 600;">Expense Breakdown</h3>
+                    <div style="position: relative; height:240px; width:100%; display:flex; justify-content:center;">
+                        <canvas id="expenseChart"></canvas>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 2. Add Grocery View -->
+            <section id="view-grocery" class="view hidden">
+                <h2 class="section-title">Add Grocery</h2>
+                <div class="glass-card form-card">
+                    <form id="form-grocery">
+                        <div class="input-group">
+                            <label for="grocery-payer">Who Paid?</label>
+                            <select id="grocery-payer" required>
+                                <option value="" disabled selected>Select user...</option>
+                                <!-- Populated dynamically -->
+                            </select>
+                        </div>
+                        <div class="input-group">
+                            <label for="grocery-amount">Amount (LKR)</label>
+                            <input type="number" id="grocery-amount" placeholder="e.g. 1500" required min="1">
+                        </div>
+                        <div class="input-group">
+                            <label for="grocery-desc">Description</label>
+                            <input type="text" id="grocery-desc" placeholder="e.g. Vegetables, Rice, Egg" required>
+                        </div>
+                        <div class="input-group">
+                            <label for="grocery-date">Date</label>
+                            <input type="date" id="grocery-date" required>
+                        </div>
+                        <button type="submit" class="btn-primary"><i class="fas fa-plus-circle"></i> Add Expense</button>
+                    </form>
+                </div>
+            </section>
+
+            <!-- 3. Add Meal View -->
+            <section id="view-meal" class="view hidden">
+                <h2 class="section-title">Meal Tracker</h2>
+                <div class="glass-card form-card">
+                    <p style="color: var(--text-secondary); margin-bottom: 20px; font-size: 0.9rem; text-align: center;">
+                        Update the number of meals per person. Cost is automatically divided based on total groceries.
+                    </p>
+                    <div id="meal-counts-list" style="display: flex; flex-direction: column; gap: 12px; margin-bottom: 20px;">
+                        <!-- list of users and a number input for each -->
+                    </div>
+                </div>
+            </section>
+
+            <!-- 4. Record Payment View -->
+            <section id="view-payment" class="view hidden">
+                <h2 class="section-title">Record Payment</h2>
+                <div class="glass-card form-card">
+                    <form id="form-payment">
+                        <div class="input-group">
+                            <label for="pay-from">Who Paid?</label>
+                            <select id="pay-from" required></select>
+                        </div>
+                        <div class="input-group">
+                            <label for="pay-to">To Whom?</label>
+                            <select id="pay-to" required></select>
+                        </div>
+                        <div class="input-group">
+                            <label for="pay-amount">Amount (LKR)</label>
+                            <input type="number" id="pay-amount" placeholder="e.g. 1000" required min="1">
+                        </div>
+                        <div class="input-group">
+                            <label for="pay-date">Date</label>
+                            <input type="date" id="pay-date" required>
+                        </div>
+                        <button type="submit" class="btn-primary" style="background: linear-gradient(135deg, var(--color-positive), #028a0f);"><i class="fas fa-hand-holding-dollar"></i> Settle Debt</button>
+                    </form>
+                </div>
+            </section>
+
+            <!-- 5. History View -->
+            <section id="view-history" class="view hidden">
+                <h2 class="section-title">History & Settle Up</h2>
+                <div class="glass-card">
+                    <button id="btn-settle" class="btn-primary" style="width: 100%; margin-bottom: 16px;"><i class="fas fa-handshake"></i> How to Settle Up?</button>
+                    <div id="history-list" class="history-list">
+                        <!-- History transactions listed here -->
+                        <p style="color: var(--text-secondary); text-align: center; padding: 20px;">No transactions yet.</p>
+                    </div>
+                </div>
+            </section>
+        </main>
+
+        <!-- Bottom Navigation Engine -->
+        <nav class="glass-nav bottom-nav">
+            <button class="nav-item active" data-target="view-dashboard">
+                <i class="fas fa-home"></i>
+                <span>Home</span>
+            </button>
+            <button class="nav-item" data-target="view-grocery">
+                <i class="fas fa-shopping-cart"></i>
+                <span>Grocery</span>
+            </button>
+            <button class="nav-item" data-target="view-meal">
+                <i class="fas fa-hamburger"></i>
+                <span>Meal</span>
+            </button>
+            <button class="nav-item" data-target="view-payment" style="color: var(--color-positive);">
+                <i class="fas fa-handshake"></i>
+                <span>Settle</span>
+            </button>
+            <button class="nav-item" data-target="view-history">
+                <i class="fas fa-clock-rotate-left"></i>
+                <span>History</span>
+            </button>
+        </nav>
+    </div>
+
+    <!-- Modals & Notifications layer -->
+    <div id="notification-container" class="notification-container"></div>
+
+    <!-- Firebase Compat Libraries for Local File Access -->
+    <script src="https://www.gstatic.com/firebasejs/10.10.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.10.0/firebase-firestore-compat.js"></script>
+    <script src="js/firebase-config.js"></script>
+
+    <script src="js/app.js"></script>
+</body>
+</html>
