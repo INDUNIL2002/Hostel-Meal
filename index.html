@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
@@ -11,19 +12,29 @@
     <!-- Chart.js Plugin -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <link rel="stylesheet" href="css/style.css">
-    
+
     <!-- PWA Settings -->
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#050505">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 </head>
+
 <body>
     <div id="app-container">
         <!-- Top App Bar -->
         <header class="glass-header">
             <h1>Meal<span style="color:var(--text-primary)">Manager</span></h1>
-            <button id="btn-export" title="Export/Import Data" class="icon-button"><i class="fas fa-file-export"></i></button>
+            <div style="display: flex; gap: 8px;">
+                <button id="btn-theme" title="Toggle Theme" class="theme-toggle-btn" onclick="toggleTheme()">
+                    <i class="fas fa-moon"></i>
+                </button>
+                <button id="btn-install" title="Install App" class="icon-button"
+                    style="display: none; background: rgba(57,255,20,0.1); color: var(--color-positive);"><i
+                        class="fas fa-download"></i></button>
+                <button id="btn-export" title="Export/Import Data" class="icon-button"><i
+                        class="fas fa-file-export"></i></button>
+            </div>
         </header>
 
         <main id="main-content">
@@ -31,14 +42,15 @@
             <section id="view-dashboard" class="view active">
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
                     <h2 class="section-title" style="margin-bottom: 0;">Balances</h2>
-                    <div class="glass-badge" style="background: rgba(57, 255, 20, 0.1); color: var(--color-positive); padding: 5px 12px; border-radius: 12px; font-size: 0.85rem; font-weight: 600;">
+                    <div class="glass-badge"
+                        style="background: rgba(57, 255, 20, 0.1); color: var(--color-positive); padding: 5px 12px; border-radius: 12px; font-size: 0.85rem; font-weight: 600;">
                         <i class="fas fa-utensils"></i> Rs.<span id="cost-per-meal-display">0.00</span> / meal
                     </div>
                 </div>
                 <div id="balances-grid" class="balances-grid">
                     <!-- Cards will be populated dynamically -->
                 </div>
-                
+
                 <div class="glass-card mt-20" style="margin-top: 24px; text-align: center;">
                     <h3 style="margin-bottom: 12px; font-weight: 600;">Expense Breakdown</h3>
                     <div style="position: relative; height:240px; width:100%; display:flex; justify-content:center;">
@@ -53,15 +65,60 @@
                 <div class="glass-card form-card">
                     <form id="form-grocery">
                         <div class="input-group">
+                            <label for="grocery-bill-type">Bill Type</label>
+                            <select id="grocery-bill-type" onchange="togglePersonalFields()" required>
+                                <option value="common" selected>Common Grocery (Shared Kitchen items)</option>
+                                <option value="personal">Direct Split Bill (Isolated / Specific Group)</option>
+                            </select>
+                        </div>
+                        <div class="input-group">
                             <label for="grocery-payer">Who Paid?</label>
                             <select id="grocery-payer" required>
                                 <option value="" disabled selected>Select user...</option>
                                 <!-- Populated dynamically -->
                             </select>
                         </div>
+                        <div class="input-group" style="margin-top: 10px;">
+                            <label style="display: flex; justify-content: space-between; align-items: center;">
+                                <span>Split Among</span>
+                                <span style="font-size: 0.75rem; color: var(--text-secondary);">(Default:
+                                    Everyone)</span>
+                            </label>
+                            <div id="grocery-split-options"
+                                style="display: flex; flex-wrap: wrap; gap: 10px; margin-top: 8px; background: rgba(0,0,0,0.2); padding: 10px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.05);">
+                                <!-- Populated dynamically -->
+                            </div>
+                        </div>
                         <div class="input-group">
                             <label for="grocery-amount">Amount (LKR)</label>
                             <input type="number" id="grocery-amount" placeholder="e.g. 1500" required min="1">
+                        </div>
+                        <!-- Extra Fields for Meal Syncing -->
+                        <div class="input-group" style="margin-top: 15px; margin-bottom: 15px;">
+                            <label
+                                style="display: flex; justify-content: space-between; align-items: center; cursor: pointer;">
+                                <span><input type="checkbox" id="grocery-auto-meal" onchange="toggleAutoMealFields()"
+                                        style="accent-color: var(--color-positive); width: 16px; height: 16px;">
+                                    Auto-sync Meal Tracker</span>
+                                <span id="auto-meal-action-text"
+                                    style="font-size: 0.8rem; color: var(--color-positive); font-weight: 600;">(Will
+                                    TICK meals)</span>
+                            </label>
+                            <div id="auto-meal-fields"
+                                style="display: none; background: rgba(57,255,20,0.05); padding: 12px; border-radius: 8px; border: 1px dashed var(--color-positive); margin-top: 10px;">
+                                <div class="input-group">
+                                    <label>Which Days?</label>
+                                    <div id="auto-day-chips" style="display: flex; flex-wrap: wrap; gap: 8px; margin-top: 6px;">
+                                        <!-- Populated dynamically -->
+                                    </div>
+                                </div>
+                                <div class="input-group" style="margin-bottom: 0;">
+                                    <label>Which Meals?</label>
+                                    <div id="auto-meal-chips" style="display: flex; flex-wrap: wrap; gap: 8px; margin-top: 6px;">
+                                        <!-- Populated dynamically -->
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                         <div class="input-group">
                             <label for="grocery-desc">Description</label>
@@ -71,7 +128,8 @@
                             <label for="grocery-date">Date</label>
                             <input type="date" id="grocery-date" required>
                         </div>
-                        <button type="submit" class="btn-primary"><i class="fas fa-plus-circle"></i> Add Expense</button>
+                        <button type="submit" class="btn-primary"><i class="fas fa-plus-circle"></i> Add
+                            Expense</button>
                     </form>
                 </div>
             </section>
@@ -80,12 +138,17 @@
             <section id="view-meal" class="view hidden">
                 <h2 class="section-title">Meal Tracker</h2>
                 <div class="glass-card form-card">
-                    <p style="color: var(--text-secondary); margin-bottom: 20px; font-size: 0.9rem; text-align: center;">
+                    <p
+                        style="color: var(--text-secondary); margin-bottom: 20px; font-size: 0.9rem; text-align: center;">
                         Update the number of meals per person. Cost is automatically divided based on total groceries.
                     </p>
-                    <div id="meal-counts-list" style="display: flex; flex-direction: column; gap: 12px; margin-bottom: 20px;">
+                    <div id="meal-counts-list"
+                        style="display: flex; flex-direction: column; gap: 12px; margin-bottom: 20px;">
                         <!-- list of users and a number input for each -->
                     </div>
+                    <button class="btn-danger" onclick="resetWeeklyMeals()" style="margin-top: 20px;">
+                        <i class="fas fa-rotate"></i> Reset Week (Clear All Meals)
+                    </button>
                 </div>
             </section>
 
@@ -110,7 +173,9 @@
                             <label for="pay-date">Date</label>
                             <input type="date" id="pay-date" required>
                         </div>
-                        <button type="submit" class="btn-primary" style="background: linear-gradient(135deg, var(--color-positive), #028a0f);"><i class="fas fa-hand-holding-dollar"></i> Settle Debt</button>
+                        <button type="submit" class="btn-primary"
+                            style="background: linear-gradient(135deg, var(--color-positive), #028a0f);"><i
+                                class="fas fa-hand-holding-dollar"></i> Settle Debt</button>
                     </form>
                 </div>
             </section>
@@ -118,11 +183,65 @@
             <!-- 5. History View -->
             <section id="view-history" class="view hidden">
                 <h2 class="section-title">History & Settle Up</h2>
+
+                <!-- Guest Management -->
+                <div class="glass-card" style="margin-bottom: 16px;">
+                    <h3 style="font-size: 0.95rem; font-weight: 700; margin-bottom: 12px; color: var(--color-accent);"><i class="fas fa-user-plus"></i> Guest Members</h3>
+                    <div style="display: flex; gap: 8px; margin-bottom: 12px;">
+                        <input type="text" id="guest-name-input" placeholder="Guest name..." style="flex: 1; padding: 10px 14px; font-size: 0.9rem;">
+                        <button onclick="addGuestMember()" style="background: var(--color-accent); color: #000; border: none; padding: 10px 16px; border-radius: var(--border-radius-sm); font-weight: 800; cursor: pointer; font-size: 0.85rem;"><i class="fas fa-plus"></i></button>
+                    </div>
+                    <div id="guest-list" style="display: flex; flex-direction: column; gap: 8px;"></div>
+                </div>
+
                 <div class="glass-card">
-                    <button id="btn-settle" class="btn-primary" style="width: 100%; margin-bottom: 16px;"><i class="fas fa-handshake"></i> How to Settle Up?</button>
+                    <button id="btn-settle" class="btn-primary" style="width: 100%; margin-bottom: 16px;"><i
+                            class="fas fa-handshake"></i> How to Settle Up?</button>
                     <div id="history-list" class="history-list">
                         <!-- History transactions listed here -->
-                        <p style="color: var(--text-secondary); text-align: center; padding: 20px;">No transactions yet.</p>
+                        <p style="color: var(--text-secondary); text-align: center; padding: 20px;">No transactions yet.
+                        </p>
+                    </div>
+                </div>
+
+                <!-- Activity Feed -->
+                <div class="glass-card" style="margin-top: 16px;">
+                    <h3 style="font-size: 0.95rem; font-weight: 700; margin-bottom: 12px; color: var(--color-accent);"><i class="fas fa-stream"></i> Activity Feed</h3>
+                    <div id="activity-feed" style="display: flex; flex-direction: column; gap: 6px; max-height: 300px; overflow-y: auto;">
+                        <p style="color: var(--text-secondary); font-size: 0.85rem; text-align: center;">No activity yet.</p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 6. Reports View -->
+            <section id="view-reports" class="view hidden">
+                <h2 class="section-title">Reports</h2>
+                
+                <!-- Period Filter -->
+                <div style="display: flex; gap: 8px; margin-bottom: 20px; flex-wrap: wrap;">
+                    <button class="report-period-btn active" onclick="setReportPeriod('week', this)" style="padding: 8px 16px; border-radius: 20px; border: 2px solid var(--color-accent); background: rgba(0,229,255,0.15); color: var(--color-accent); font-weight: 700; font-size: 0.82rem; cursor: pointer;">This Week</button>
+                    <button class="report-period-btn" onclick="setReportPeriod('month', this)" style="padding: 8px 16px; border-radius: 20px; border: 2px solid var(--glass-border); background: transparent; color: var(--text-secondary); font-weight: 600; font-size: 0.82rem; cursor: pointer;">This Month</button>
+                    <button class="report-period-btn" onclick="setReportPeriod('all', this)" style="padding: 8px 16px; border-radius: 20px; border: 2px solid var(--glass-border); background: transparent; color: var(--text-secondary); font-weight: 600; font-size: 0.82rem; cursor: pointer;">All Time</button>
+                </div>
+
+                <!-- Summary Stats -->
+                <div id="report-stats" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 24px;">
+                    <!-- Populated dynamically -->
+                </div>
+
+                <!-- Per-Person Bar Chart -->
+                <div class="glass-card" style="margin-bottom: 20px; text-align: center;">
+                    <h3 style="margin-bottom: 12px; font-weight: 700; font-size: 1rem;">Per-Person Spending</h3>
+                    <div style="position: relative; height: 250px; width: 100%;">
+                        <canvas id="reportBarChart"></canvas>
+                    </div>
+                </div>
+
+                <!-- Spending Trends Line Chart -->
+                <div class="glass-card" style="text-align: center;">
+                    <h3 style="margin-bottom: 12px; font-weight: 700; font-size: 1rem;">Spending Trends</h3>
+                    <div style="position: relative; height: 250px; width: 100%;">
+                        <canvas id="reportLineChart"></canvas>
                     </div>
                 </div>
             </section>
@@ -142,6 +261,10 @@
                 <i class="fas fa-hamburger"></i>
                 <span>Meal</span>
             </button>
+            <button class="nav-item" data-target="view-reports">
+                <i class="fas fa-chart-line"></i>
+                <span>Reports</span>
+            </button>
             <button class="nav-item" data-target="view-payment" style="color: var(--color-positive);">
                 <i class="fas fa-handshake"></i>
                 <span>Settle</span>
@@ -153,8 +276,14 @@
         </nav>
     </div>
 
+    <!-- Undo Floating Button (hidden by default) -->
+    <div id="undo-container"></div>
+
     <!-- Modals & Notifications layer -->
     <div id="notification-container" class="notification-container"></div>
+
+    <!-- Chart.js for Reports -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
 
     <!-- Firebase Compat Libraries for Local File Access -->
     <script src="https://www.gstatic.com/firebasejs/10.10.0/firebase-app-compat.js"></script>
@@ -163,4 +292,5 @@
 
     <script src="js/app.js"></script>
 </body>
+
 </html>

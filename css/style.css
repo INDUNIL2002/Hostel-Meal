@@ -20,6 +20,19 @@
     --shadow-red: 0 0 15px rgba(255, 7, 58, 0.4);
 }
 
+[data-theme="light"] {
+    --bg-color: #f0f2f5;
+    --surface-color: rgba(255, 255, 255, 0.85);
+    --glass-border: rgba(0, 0, 0, 0.08);
+    --text-primary: #1a1a2e;
+    --text-secondary: #555555;
+    --color-positive: #00b341;
+    --color-negative: #d40030;
+    --color-accent: #0090b8;
+    --shadow-neon: 0 0 12px rgba(0, 179, 65, 0.3);
+    --shadow-red: 0 0 12px rgba(212, 0, 48, 0.3);
+}
+
 * {
     margin: 0;
     padding: 0;
@@ -438,4 +451,78 @@ input:focus, select:focus {
     color: var(--color-negative);
     text-shadow: 0 0 10px rgba(255, 7, 58, 0.4); 
 }
+
+/* Light Theme Overrides */
+[data-theme="light"] body {
+    color-scheme: light;
+    background-image: 
+        radial-gradient(circle at 10% 20%, rgba(0, 144, 184, 0.06), transparent 40%),
+        radial-gradient(circle at 90% 80%, rgba(0, 179, 65, 0.06), transparent 40%);
+}
+[data-theme="light"] .glass-header { background: rgba(255, 255, 255, 0.85); }
+[data-theme="light"] .glass-nav { background: rgba(255, 255, 255, 0.92); }
+[data-theme="light"] input, [data-theme="light"] select {
+    background: rgba(0, 0, 0, 0.04);
+    border: 1px solid rgba(0, 0, 0, 0.12);
+}
+[data-theme="light"] .history-card { background: rgba(255, 255, 255, 0.6); }
+[data-theme="light"] .notification { background: rgba(255, 255, 255, 0.95); color: #1a1a2e; }
+
+/* Undo Floating Button */
+.undo-floating {
+    position: fixed;
+    bottom: 90px;
+    right: 20px;
+    background: linear-gradient(135deg, #ff073a, #ff4444);
+    color: #fff;
+    border: none;
+    padding: 12px 20px;
+    border-radius: 30px;
+    font-weight: 800;
+    font-size: 0.85rem;
+    cursor: pointer;
+    box-shadow: 0 4px 20px rgba(255, 7, 58, 0.4);
+    z-index: 200;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    animation: slideUp 0.3s ease-out forwards;
+}
+.undo-floating:active { transform: scale(0.95); }
+@keyframes slideUp {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* Reset Button */
+.btn-danger {
+    background: linear-gradient(135deg, #ff073a, #cc0020);
+    color: #fff;
+    border: none;
+    padding: 14px 20px;
+    border-radius: var(--border-radius-md);
+    font-weight: 800;
+    font-size: 0.95rem;
+    cursor: pointer;
+    box-shadow: 0 4px 20px rgba(255, 7, 58, 0.3);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 8px;
+    width: 100%;
+    margin-top: 16px;
+}
+.btn-danger:active { transform: scale(0.97); }
+
+/* Theme Toggle */
+.theme-toggle-btn {
+    background: none;
+    border: none;
+    color: var(--text-secondary);
+    font-size: 1.2rem;
+    cursor: pointer;
+    transition: all 0.3s;
+    padding: 4px;
+}
+.theme-toggle-btn:hover { color: var(--color-accent); transform: rotate(20deg); }
 
