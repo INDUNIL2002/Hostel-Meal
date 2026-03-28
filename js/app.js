@@ -71,9 +71,31 @@ function updateThemeIcon(theme) {
 }
 
 // Weekly Reset
-window.resetWeeklyMeals = function() {
-    if (!confirm('⚠️ Are you sure you want to RESET all meals for the week?\n\nThis will clear all meal ticks (common & personal).\nTransactions and balances will be recalculated.')) return;
-    pushUndo('Weekly Reset');
+window.closeWeekAndCarryForward = function() {
+    if (!confirm('⚠️ Are you sure you want to CLOSE the week?\n\nThis will keep current balances, but reset all meals and clear transactions to start a fresh week.')) return;
+    pushUndo('Close Week');
+    
+    let finalBalances = { ...state.balances };
+    
+    if (!state.archivedTransactions) state.archivedTransactions = [];
+    state.archivedTransactions.push(...state.transactions);
+    
+    state.transactions = [];
+    
+    USERS.forEach(u => {
+        let bal = finalBalances[u] || 0;
+        if (Math.abs(bal) > 0.01) {
+            state.transactions.push({
+                id: Date.now() + Math.random(),
+                type: 'carry_forward',
+                user: u,
+                amount: bal,
+                date: new Date().toISOString(),
+                desc: 'Balance carried forward'
+            });
+        }
+    });
+
     USERS.forEach(u => {
         if (state.mealSchedule[u]) {
             DAYS.forEach(d => {
@@ -82,8 +104,8 @@ window.resetWeeklyMeals = function() {
         }
     });
     recalculateBalances(true);
-    logActivity('Weekly meals reset');
-    showNotification('Weekly meals have been reset! 🔄', 'success');
+    logActivity('Week closed & balances carried forward');
+    showNotification('New week started! 🔄', 'success');
 }
 
 // Guest Member Management
@@ -312,10 +334,12 @@ function recalculateBalances(triggerRenders = true, renderMeals = true, shouldSa
     let groceryTotal = 0;
     state.transactions.forEach(tx => {
         if (tx.type === 'grocery') {
-            // Only add to groceryTotal if it's for everyone (splitAmong is empty or includes everyone)
-            if (!tx.splitAmong || tx.splitAmong.length === 0 || tx.splitAmong.length === USERS.length) {
-                groceryTotal += tx.amount;
+            let isCommon = tx.billType === 'common';
+            // Legacy support
+            if (!tx.billType && (!tx.splitAmong || tx.splitAmong.length === 0 || tx.splitAmong.length === USERS.length)) {
+                isCommon = true;
             }
+            if (isCommon) groceryTotal += tx.amount;
         }
     });
 
@@ -349,16 +373,47 @@ function recalculateBalances(triggerRenders = true, renderMeals = true, shouldSa
         if (tx.type === 'grocery') {
             state.balances[tx.payer] += tx.amount; // Payer gets credit
             
-            // If this was an isolated expense, split the debit among selected users
-            if (tx.splitAmong && tx.splitAmong.length > 0 && tx.splitAmong.length < USERS.length) {
-                let splitAmount = tx.amount / tx.splitAmong.length;
-                tx.splitAmong.forEach(u => {
-                    state.balances[u] -= splitAmount;
-                });
+            let isCommon = tx.billType === 'common';
+            if (!tx.billType && (!tx.splitAmong || tx.splitAmong.length === 0 || tx.splitAmong.length === USERS.length)) {
+                isCommon = true;
+            }
+
+            if (!isCommon) {
+                let actualParticipants = tx.splitAmong && tx.splitAmong.length > 0 ? tx.splitAmong : [...USERS];
+                
+                if (tx.personalDay && tx.personalMeals && tx.personalMeals.length > 0) {
+                    const days = tx.personalDay.split(',');
+                    const meals = tx.personalMeals;
+                    let validUsers = [];
+                    actualParticipants.forEach(u => {
+                        let hasMeal = false;
+                        days.forEach(d => {
+                            meals.forEach(m => {
+                                if (state.mealSchedule[u] && state.mealSchedule[u][d] && 
+                                   (state.mealSchedule[u][d][m] === true || state.mealSchedule[u][d][m] === 'personal')) {
+                                    hasMeal = true;
+                                }
+                            });
+                        });
+                        if (hasMeal) validUsers.push(u);
+                    });
+                    if (validUsers.length > 0) {
+                        actualParticipants = validUsers;
+                    }
+                }
+
+                if (actualParticipants.length > 0) {
+                    let splitAmount = tx.amount / actualParticipants.length;
+                    actualParticipants.forEach(u => {
+                        state.balances[u] -= splitAmount;
+                    });
+                }
             }
         } else if (tx.type === 'payment') {
             state.balances[tx.from] += tx.amount;
             state.balances[tx.to] -= tx.amount;
+        } else if (tx.type === 'carry_forward') {
+            state.balances[tx.user] += tx.amount;
         }
     });
 
@@ -822,14 +877,17 @@ window.togglePersonalFields = function() {
     const type = document.getElementById('grocery-bill-type').value;
     const descField = document.getElementById('grocery-desc');
     const autoMealActionText = document.getElementById('auto-meal-action-text');
+    const splitAmongContainer = document.getElementById('grocery-split-container');
     
     if (type === 'personal') {
+        if (splitAmongContainer) splitAmongContainer.style.display = 'block';
         if (!descField.value) descField.value = 'Isolated/Group Meal';
         if (autoMealActionText) {
             autoMealActionText.textContent = '(Will MARK AS PERSONAL meals)';
             autoMealActionText.style.color = '#ffb300';
         }
     } else {
+        if (splitAmongContainer) splitAmongContainer.style.display = 'none';
         if(descField.value === 'Isolated/Group Meal' || descField.value === 'Outside/Personal Meal') descField.value = '';
         if (autoMealActionText) {
             autoMealActionText.textContent = '(Will TICK AS COMMON meals)';
@@ -1041,6 +1099,11 @@ function renderHistory() {
                 title = `${tx.from} paid ${tx.to}`;
                 meta = `Cash Settlement`;
                 amtClass = 'grocery'; // Neutral/Positive color
+            } else if (tx.type === 'carry_forward') {
+                icon = '<i class="fas fa-forward" style="color: #00e5ff"></i>';
+                title = `${tx.user} Balance Brought Forward`;
+                meta = tx.desc || `Previous Week Balance`;
+                amtClass = tx.amount < 0 ? 'meal' : 'grocery';
             }
             
             let dateStr = new Date(tx.date).toLocaleDateString();

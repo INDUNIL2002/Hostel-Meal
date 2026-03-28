@@ -78,7 +78,7 @@
                                 <!-- Populated dynamically -->
                             </select>
                         </div>
-                        <div class="input-group" style="margin-top: 10px;">
+                        <div class="input-group" id="grocery-split-container" style="margin-top: 10px; display: none;">
                             <label style="display: flex; justify-content: space-between; align-items: center;">
                                 <span>Split Among</span>
                                 <span style="font-size: 0.75rem; color: var(--text-secondary);">(Default:
@@ -146,8 +146,8 @@
                         style="display: flex; flex-direction: column; gap: 12px; margin-bottom: 20px;">
                         <!-- list of users and a number input for each -->
                     </div>
-                    <button class="btn-danger" onclick="resetWeeklyMeals()" style="margin-top: 20px;">
-                        <i class="fas fa-rotate"></i> Reset Week (Clear All Meals)
+                    <button class="btn-primary" onclick="closeWeekAndCarryForward()" style="margin-top: 20px; background: linear-gradient(135deg, var(--color-positive), #028a0f);">
+                        <i class="fas fa-forward"></i> Close Week & Carry Balances Forward
                     </button>
                 </div>
             </section>
